@@ -41,7 +41,7 @@
     }
   ],
   "dependencies": {
-    "mapnik-vector-tile": "~1.2.2",
+    "mapnik-vector-tile": "cartodb/mapnik-vector-tile#1.2.2-pass-variables",
     "nan": "~2.4.0",
     "node-pre-gyp": "~0.6.30",
     "protozero": "~1.4.2"
