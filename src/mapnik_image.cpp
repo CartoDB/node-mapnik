@@ -13,6 +13,7 @@
 
 #include <mapnik/marker.hpp>
 #include <mapnik/marker_cache.hpp>
+#include <mapnik/metrics.hpp>
 #include <mapnik/svg/svg_parser.hpp>
 #include <mapnik/svg/svg_storage.hpp>
 #include <mapnik/svg/svg_converter.hpp>
@@ -109,10 +110,12 @@ void Image::Initialize(v8::Local<v8::Object> target) {
     Nan::SetPrototypeMethod(lcons, "resize", resize);
     Nan::SetPrototypeMethod(lcons, "resizeSync", resizeSync);
     Nan::SetPrototypeMethod(lcons, "data", data);
+    Nan::SetPrototypeMethod(lcons, "get_metrics", get_metrics);
 
     // properties
     ATTR(lcons, "scaling", get_scaling, set_scaling);
     ATTR(lcons, "offset", get_offset, set_offset);
+    ATTR(lcons, "metrics_enabled", get_metrics_enabled, set_metrics_enabled);
 
     // This *must* go after the ATTR setting
     Nan::SetMethod(lcons->GetFunction().As<v8::Object>(),
@@ -4209,8 +4212,8 @@ NAN_SETTER(Image::set_offset)
     if (!value->IsNumber())
     {
         Nan::ThrowError("Must provide a number");
-    } 
-    else 
+    }
+    else
     {
         double val = value->NumberValue();
         im->this_->set_offset(val);
@@ -4233,5 +4236,46 @@ NAN_METHOD(Image::data)
     Image* im = Nan::ObjectWrap::Unwrap<Image>(info.Holder());
     // TODO - make this zero copy
     info.GetReturnValue().Set(Nan::CopyBuffer(reinterpret_cast<const char *>(im->this_->bytes()), im->this_->size()).ToLocalChecked());
+}
+
+NAN_GETTER(Image::get_metrics_enabled)
+{
+#ifndef MAPNIK_METRICS
+    bool active = false;
+#else
+    Image* im = Nan::ObjectWrap::Unwrap<Image>(info.Holder());
+    bool active = im->this_->get_metrics().enabled_;
+#endif
+    info.GetReturnValue().Set(Nan::New<v8::Boolean>(active));
+}
+
+NAN_SETTER(Image::set_metrics_enabled)
+{
+#ifdef MAPNIK_METRICS
+    Image* im = Nan::ObjectWrap::Unwrap<Image>(info.Holder());
+    if (!value->IsBoolean())
+    {
+        Nan::ThrowError("Must provide a boolean");
+    }
+    else
+    {
+        bool val = value->BooleanValue();
+        im->this_->get_metrics().enabled_ = val;
+    }
+#endif
+}
+
+NAN_METHOD(Image::get_metrics)
+{
+#ifdef MAPNIK_METRICS
+    Image* im = Nan::ObjectWrap::Unwrap<Image>(info.Holder());
+    auto result = node_mapnik::metrics_to_object(im->this_->get_metrics());
+    if (!result.IsEmpty())
+    {
+        info.GetReturnValue().Set(result.ToLocalChecked());
+        return;
+    }
+#endif
+    info.GetReturnValue().Set(Nan::New<v8::Object>());
 }
 

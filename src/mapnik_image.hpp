@@ -108,11 +108,15 @@ public:
     static v8::Local<v8::Value> _resizeSync(Nan::NAN_METHOD_ARGS_TYPE info);
     static NAN_METHOD(resizeSync);
     static NAN_METHOD(data);
-    
+
     static NAN_GETTER(get_scaling);
     static NAN_SETTER(set_scaling);
     static NAN_GETTER(get_offset);
     static NAN_SETTER(set_offset);
+
+    static NAN_GETTER(get_metrics_enabled); //false if MAPNIK_METRICS undefined
+    static NAN_SETTER(set_metrics_enabled);
+    static NAN_METHOD(get_metrics);
 
     void _ref() { Ref(); }
     void _unref() { Unref(); }

@@ -1570,7 +1570,7 @@ struct image_baton_t {
     uv_work_t request;
     Map *m;
     Image *im;
-    int buffer_size; // TODO - no effect until mapnik::request is used
+    int buffer_size;
     double scale_factor;
     double scale_denominator;
     mapnik::attributes variables;
@@ -1596,7 +1596,7 @@ struct grid_baton_t {
     Map *m;
     Grid *g;
     std::size_t layer_idx;
-    int buffer_size; // TODO - no effect until mapnik::request is used
+    int buffer_size;
     double scale_factor;
     double scale_denominator;
     mapnik::attributes variables;
@@ -2055,7 +2055,7 @@ NAN_METHOD(Map::render)
                     return;
                 }
                 closure->fill_type = static_cast<mapnik::vector_tile_impl::polygon_fill_type>(param_val->IntegerValue());
-                if (closure->fill_type < 0 || closure->fill_type >= mapnik::vector_tile_impl::polygon_fill_type_max)
+                if (closure->fill_type >= mapnik::vector_tile_impl::polygon_fill_type_max)
                 {
                     delete closure;
                     Nan::ThrowTypeError("optional arg 'fill_type' out of possible range");
@@ -2221,7 +2221,7 @@ void Map::EIO_RenderGrid(uv_work_t* req)
 {
 
     grid_baton_t *closure = static_cast<grid_baton_t *>(req->data);
-
+    
     std::vector<mapnik::layer> const& layers = closure->m->map_->layers();
 
     try
@@ -2281,45 +2281,6 @@ void Map::EIO_AfterRenderGrid(uv_work_t* req)
 }
 #endif
 
-struct agg_renderer_visitor
-{
-    agg_renderer_visitor(mapnik::Map const& m,
-                         mapnik::request const& req,
-                         mapnik::attributes const& vars,
-                         double scale_factor,
-                         unsigned offset_x,
-                         unsigned offset_y,
-                         double scale_denominator)
-        : m_(m),
-          req_(req),
-          vars_(vars),
-          scale_factor_(scale_factor),
-          offset_x_(offset_x),
-          offset_y_(offset_y),
-          scale_denominator_(scale_denominator) {}
-
-    void operator() (mapnik::image_rgba8 & pixmap)
-    {
-        mapnik::agg_renderer<mapnik::image_rgba8> ren(m_,req_,vars_,pixmap,scale_factor_,offset_x_,offset_y_);
-        ren.apply(scale_denominator_);
-    }
-
-    template <typename T>
-    void operator() (T &)
-    {
-        throw std::runtime_error("This image type is not currently supported for rendering.");
-    }
-
-  private:
-    mapnik::Map const& m_;
-    mapnik::request const& req_;
-    mapnik::attributes const& vars_;
-    double scale_factor_;
-    unsigned offset_x_;
-    unsigned offset_y_;
-    double scale_denominator_;
-};
-
 void Map::EIO_RenderImage(uv_work_t* req)
 {
     image_baton_t *closure = static_cast<image_baton_t *>(req->data);
@@ -2329,14 +2290,17 @@ void Map::EIO_RenderImage(uv_work_t* req)
         mapnik::Map const& map = *closure->m->map_;
         mapnik::request m_req(map.width(),map.height(),map.get_current_extent());
         m_req.set_buffer_size(closure->buffer_size);
-        agg_renderer_visitor visit(map,
-                                   m_req,
-                                   closure->variables,
-                                   closure->scale_factor,
-                                   closure->offset_x,
-                                   closure->offset_y,
-                                   closure->scale_denominator);
-        mapnik::util::apply_visitor(visit, *closure->im->get());
+
+        mapnik::image_rgba8& img = mapnik::util::get<mapnik::image_rgba8>(*closure->im->get());
+
+        mapnik::agg_renderer<mapnik::image_rgba8> ren(map,
+                                                      m_req,
+                                                      closure->variables,
+                                                      img,
+                                                      closure->scale_factor,
+                                                      closure->offset_x,
+                                                      closure->offset_y);
+        ren.apply(closure->scale_denominator);
     }
     catch (std::exception const& ex)
     {
@@ -2375,7 +2339,7 @@ typedef struct {
     double scale_denominator;
     mapnik::attributes variables;
     bool use_cairo;
-    int buffer_size; // TODO - no effect until mapnik::request is used
+    int buffer_size;
     bool error;
     std::string error_name;
     Nan::Persistent<v8::Function> cb;
