@@ -11,8 +11,8 @@
 
 
 
-namespace mapnik { 
-    struct image_any; 
+namespace mapnik {
+    struct image_any;
     enum image_dtype : std::uint8_t;
 }
 
