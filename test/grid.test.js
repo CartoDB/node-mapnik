@@ -118,7 +118,7 @@ describe('mapnik.Grid ', function() {
             assert.throws(function() { grid_blank3.clear(null); });
             grid_blank3.clear(function(err, grid_blank4) {
                 assert.equal(grid_blank4.key, "stuff");
-                
+
                 assert.equal(grid_blank4.painted(), false);
                 done();
             });
@@ -164,6 +164,22 @@ describe('mapnik.Grid ', function() {
             done();
         });
     });
+
+    it('works with metrics', function(done) {
+        var g = new mapnik.Grid(256, 256);
+        g.metrics_enabled = false;
+        assert.equal(g.metrics_enabled, false);
+
+        if (mapnik.supports.metrics) {
+            g.metrics_enabled = true;
+            assert.equal(g.metrics_enabled, true);
+
+            assert(JSON.stringify(g.get_metrics()) === JSON.stringify({}));
+        }
+
+        done();
+    });
+
 });
 
 }

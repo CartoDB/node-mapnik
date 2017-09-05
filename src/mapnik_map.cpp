@@ -2221,7 +2221,7 @@ void Map::EIO_RenderGrid(uv_work_t* req)
 {
 
     grid_baton_t *closure = static_cast<grid_baton_t *>(req->data);
-    
+
     std::vector<mapnik::layer> const& layers = closure->m->map_->layers();
 
     try

@@ -16,7 +16,7 @@ Nan::Persistent<v8::FunctionTemplate> Grid::constructor;
 
 /**
  * **`mapnik.Grid`**
- * 
+ *
  * Generator for [UTFGrid](https://www.mapbox.com/guides/an-open-platform)
  * representations of data.
  *
@@ -45,8 +45,11 @@ void Grid::Initialize(v8::Local<v8::Object> target) {
     Nan::SetPrototypeMethod(lcons, "painted", painted);
     Nan::SetPrototypeMethod(lcons, "clear", clear);
     Nan::SetPrototypeMethod(lcons, "clearSync", clearSync);
+    Nan::SetPrototypeMethod(lcons, "get_metrics", get_metrics);
+
     // properties
     ATTR(lcons, "key", get_key, set_key);
+    ATTR(lcons, "metrics_enabled", get_metrics_enabled, set_metrics_enabled);
 
     target->Set(Nan::New("Grid").ToLocalChecked(), lcons->GetFunction());
     NODE_MAPNIK_DEFINE_64_BIT_CONSTANT(lcons->GetFunction(), "base_mask", mapnik::grid::base_mask);
@@ -186,7 +189,7 @@ void Grid::EIO_AfterClear(uv_work_t* req)
     clear_grid_baton_t *closure = static_cast<clear_grid_baton_t *>(req->data);
     if (closure->error)
     {
-        // There seems to be no possible way for the exception to be thrown in the previous 
+        // There seems to be no possible way for the exception to be thrown in the previous
         // process and therefore not possible to have an error here so removing it from code
         // coverage
         /* LCOV_EXCL_START */
@@ -550,7 +553,7 @@ void Grid::EIO_AfterEncode(uv_work_t* req)
     encode_grid_baton_t *closure = static_cast<encode_grid_baton_t *>(req->data);
 
 
-    if (closure->error) 
+    if (closure->error)
     {
         // There is no known ways to throw errors in the processing prior
         // so simply removing the following from coverage
@@ -558,8 +561,8 @@ void Grid::EIO_AfterEncode(uv_work_t* req)
         v8::Local<v8::Value> argv[1] = { Nan::Error(closure->error_name.c_str()) };
         Nan::MakeCallback(Nan::GetCurrentContext()->Global(), Nan::New(closure->cb), 1, argv);
         /* LCOV_EXCL_STOP */
-    } 
-    else 
+    }
+    else
     {
 
         // convert key order to proper javascript array
@@ -602,4 +605,45 @@ void Grid::EIO_AfterEncode(uv_work_t* req)
     delete closure;
 }
 
+NAN_GETTER(Grid::get_metrics_enabled)
+{
+#ifndef MAPNIK_METRICS
+    bool active = false;
+#else
+    Grid* g = Nan::ObjectWrap::Unwrap<Grid>(info.Holder());
+    bool active = g->this_->metrics_.enabled_;
 #endif
+    info.GetReturnValue().Set(Nan::New<v8::Boolean>(active));
+}
+
+NAN_SETTER(Grid::set_metrics_enabled)
+{
+#ifdef MAPNIK_METRICS
+    Grid* g = Nan::ObjectWrap::Unwrap<Grid>(info.Holder());
+    if (!value->IsBoolean())
+    {
+        Nan::ThrowError("Must provide a boolean");
+    }
+    else
+    {
+        bool val = value->BooleanValue();
+        g->this_->metrics_.enabled_ = val;
+    }
+#endif
+}
+
+NAN_METHOD(Grid::get_metrics)
+{
+#ifdef MAPNIK_METRICS
+    Grid* g = Nan::ObjectWrap::Unwrap<Grid>(info.Holder());
+    auto result = node_mapnik::metrics_to_object(g->this_->metrics_);
+    if (!result.IsEmpty())
+    {
+        info.GetReturnValue().Set(result.ToLocalChecked());
+        return;
+    }
+#endif
+    info.GetReturnValue().Set(Nan::New<v8::Object>());
+}
+
+#endif //Grid renderer

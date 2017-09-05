@@ -41,6 +41,11 @@ public:
 
     static NAN_GETTER(get_key);
     static NAN_SETTER(set_key);
+
+    static NAN_GETTER(get_metrics_enabled); //false if MAPNIK_METRICS undefined
+    static NAN_SETTER(set_metrics_enabled);
+    static NAN_METHOD(get_metrics);
+
     void _ref() { Ref(); }
     void _unref() { Unref(); }
 
