@@ -2,7 +2,9 @@
 #define __NODE_MAPNIK_UTILS_H__
 
 // core types
+#ifdef MAPNIK_METRICS
 #include <mapnik/metrics.hpp>
+#endif
 #include <mapnik/params.hpp>
 #include <mapnik/unicode.hpp>
 #include <mapnik/value_types.hpp>

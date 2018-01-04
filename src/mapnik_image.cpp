@@ -13,7 +13,9 @@
 
 #include <mapnik/marker.hpp>
 #include <mapnik/marker_cache.hpp>
+#ifdef MAPNIK_METRICS
 #include <mapnik/metrics.hpp>
+#endif
 #include <mapnik/svg/svg_parser.hpp>
 #include <mapnik/svg/svg_storage.hpp>
 #include <mapnik/svg/svg_converter.hpp>
