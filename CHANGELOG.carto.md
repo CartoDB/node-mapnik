@@ -1,5 +1,12 @@
 # CARTO node-mapnik changelog
 
+## 3.6.2-carto.4
+
+**Release date**: 2018-03-01
+
+Changes:
+ - Update Mapnik to v3.0.15.5
+
 ## 3.6.2-carto.3
 
 **Release date**: 2018-02-26
